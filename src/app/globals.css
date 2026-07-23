@@ -1,0 +1,263 @@
+@import "tailwindcss";
+
+:root {
+  --teal-deep: #1e6b78;
+  --teal: #3d97a5;
+  --cream: #f3efa9;
+  --cream-soft: #f8f6d6;
+  --orange: #f2a34b;
+  --rust: #b03f26;
+  --ink: #241c15;
+  --paper: #fbf9ee;
+}
+
+@theme inline {
+  --color-teal-deep: var(--teal-deep);
+  --color-teal: var(--teal);
+  --color-cream: var(--cream);
+  --color-cream-soft: var(--cream-soft);
+  --color-orange: var(--orange);
+  --color-rust: var(--rust);
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+
+  --font-display: var(--font-fraunces);
+  --font-body: var(--font-work-sans);
+  --font-mono: var(--font-plex-mono);
+}
+
+body {
+  background: var(--paper);
+  background-image: radial-gradient(ellipse at 10% 0%, rgba(30, 107, 120, 0.06), transparent 55%),
+    radial-gradient(ellipse at 90% 100%, rgba(176, 63, 38, 0.05), transparent 55%);
+  font-family: var(--font-body), sans-serif;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(30, 107, 120, 0.3);
+  border-radius: 4px;
+}
+
+/* ---------- Turntable ---------- */
+
+.deck-stage {
+  perspective: 1100px;
+}
+
+.deck {
+  position: relative;
+  width: min(320px, 78vw);
+  height: min(320px, 78vw);
+  transform: rotateX(11deg);
+  transition: transform 0.4s ease;
+}
+.deck-stage:hover .deck {
+  transform: rotateX(7deg) translateY(-3px);
+}
+
+.plinth {
+  position: absolute;
+  inset: -20px -20px -36px -20px;
+  border-radius: 16px;
+  background: linear-gradient(160deg, #46331f 0%, #2b1e13 45%, #180f09 100%);
+  box-shadow: 0 24px 42px rgba(16, 11, 7, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -8px 14px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+.plinth::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(98deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 7px);
+  mix-blend-mode: overlay;
+}
+.brand-plate {
+  position: absolute;
+  left: 14px;
+  bottom: 9px;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(243, 239, 169, 0.5);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+}
+.brand-plate span {
+  color: var(--orange);
+  opacity: 0.85;
+  margin-left: 4px;
+}
+.power-led {
+  position: absolute;
+  right: 16px;
+  bottom: 12px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #5a4636;
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.6);
+  transition: all 0.3s ease;
+}
+.power-led.on {
+  background: var(--orange);
+  box-shadow: 0 0 9px 2px rgba(242, 163, 75, 0.85), inset 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+.platter {
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 26%, rgba(255, 255, 255, 0.09), transparent 45%),
+    repeating-radial-gradient(circle at center, #0b0b0b 0px, #0b0b0b 1.6px, #1a1a1a 1.6px, #1a1a1a 2.8px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 0 30px rgba(0, 0, 0, 0.55),
+    0 12px 26px rgba(0, 0, 0, 0.55);
+  animation: spin 1.8s linear infinite;
+  animation-play-state: paused;
+}
+.platter.spinning {
+  animation-play-state: running;
+}
+.platter.rpm45 {
+  animation-duration: 1.333s;
+}
+
+.strobe-ring {
+  position: absolute;
+  inset: 2.5%;
+  border-radius: 50%;
+  background: repeating-conic-gradient(rgba(255, 255, 255, 0.055) 0deg 2deg, transparent 2deg 8deg);
+  pointer-events: none;
+}
+.sheen {
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 27% 21%, rgba(255, 255, 255, 0.32), transparent 42%);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.record-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 37%;
+  height: 37%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--rust);
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35), inset 0 2px 4px rgba(255, 255, 255, 0.16),
+    inset 0 -3px 7px rgba(0, 0, 0, 0.32);
+}
+.record-label span {
+  font-family: var(--font-display), serif;
+  font-weight: 600;
+  font-size: 0.62rem;
+  color: var(--cream-soft);
+  text-align: center;
+  padding: 8px;
+  line-height: 1.15;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+.spindle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #555, #050505);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 2px #3a3a3a, 0 1px 3px rgba(0, 0, 0, 0.6);
+  z-index: 3;
+}
+
+.pivot-base {
+  position: absolute;
+  top: 1%;
+  right: 1%;
+  width: 15%;
+  height: 15%;
+  min-width: 30px;
+  min-height: 30px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #4b3a28, #201509);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  z-index: 4;
+}
+.tonearm {
+  position: absolute;
+  top: 2%;
+  right: 2%;
+  width: 15px;
+  height: 58%;
+  transform-origin: top center;
+  transition: transform 0.5s cubic-bezier(0.22, 1.3, 0.4, 1);
+  z-index: 6;
+  cursor: grab;
+  touch-action: none;
+}
+.tonearm.dragging {
+  transition: none;
+  cursor: grabbing;
+}
+.counterweight {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 19px;
+  height: 13px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #2e2e2e, #0f0f0f);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+.arm-tube {
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: calc(100% - 9px);
+  background: linear-gradient(90deg, #e8dec5, #b9ab84 55%, #8f8264);
+  border-radius: 3px;
+  box-shadow: 1px 0 2px rgba(0, 0, 0, 0.3);
+}
+.headshell {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(10deg);
+  width: 19px;
+  height: 11px;
+  border-radius: 2px 6px 6px 2px;
+  background: linear-gradient(90deg, var(--teal-deep), var(--teal));
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+.stylus {
+  position: absolute;
+  bottom: -3px;
+  left: 2px;
+  width: 3px;
+  height: 6px;
+  border-radius: 1px;
+  background: #e8e8e8;
+  transition: box-shadow 0.2s ease;
+}
+.deck.dropped .stylus {
+  box-shadow: 0 0 6px 1px rgba(255, 255, 255, 0.75);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
