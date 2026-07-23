@@ -5,8 +5,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { VinylRecord } from "@/lib/types";
 
-const SIGNED_URL_TTL = 60 * 60 * 24 * 365 * 10; // effectively "forever" for a personal app
-
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
@@ -63,39 +61,10 @@ export async function deleteRecord(id: string) {
   revalidatePath("/");
 }
 
-async function uploadToBucket(bucket: "record-photos" | "record-audio", file: File) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not signed in");
-
-  const ext = file.name.split(".").pop() || "bin";
-  const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
-
-  const { error: uploadError } = await supabase.storage
-    .from(bucket)
-    .upload(path, file, { contentType: file.type, upsert: false });
-  if (uploadError) throw new Error(uploadError.message);
-
-  const { data: signed, error: signError } = await supabase.storage
-    .from(bucket)
-    .createSignedUrl(path, SIGNED_URL_TTL);
-  if (signError) throw new Error(signError.message);
-
-  return signed.signedUrl;
-}
-
-export async function uploadPhoto(file: File) {
-  return uploadToBucket("record-photos", file);
-}
-
-export async function uploadAudio(file: File) {
-  return uploadToBucket("record-audio", file);
-}
-
-export async function attachAudio(id: string, file: File): Promise<VinylRecord> {
-  const audioUrl = await uploadAudio(file);
+// File bytes never pass through here — they're uploaded client-side straight
+// to Supabase Storage (src/lib/storage-client.ts). This just persists the
+// resulting URL, a tiny payload well under any serverless body-size limit.
+export async function updateRecordAudio(id: string, audioUrl: string): Promise<VinylRecord> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("records")

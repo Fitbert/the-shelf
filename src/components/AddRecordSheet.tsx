@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Sheet from "./Sheet";
 import BarcodeScanner from "./BarcodeScanner";
-import { addRecord, uploadPhoto } from "@/lib/actions";
+import { addRecord } from "@/lib/actions";
+import { uploadPhoto } from "@/lib/storage-client";
 import type { DiscogsReleaseDetail, DiscogsSearchResult, VinylRecord } from "@/lib/types";
 
 type Mode = "search" | "scan" | "manual";

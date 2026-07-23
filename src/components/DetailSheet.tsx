@@ -2,7 +2,8 @@
 
 import { useRef, useState } from "react";
 import Sheet from "./Sheet";
-import { attachAudio, deleteRecord } from "@/lib/actions";
+import { deleteRecord, updateRecordAudio } from "@/lib/actions";
+import { uploadAudio } from "@/lib/storage-client";
 import type { VinylRecord } from "@/lib/types";
 
 export default function DetailSheet({
@@ -19,6 +20,7 @@ export default function DetailSheet({
   onUpdated: (record: VinylRecord) => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   if (!record) return null;
@@ -40,9 +42,13 @@ export default function DetailSheet({
     const file = e.target.files?.[0];
     if (!file || !record) return;
     setBusy(true);
+    setError(null);
     try {
-      const updated = await attachAudio(record.id, file);
+      const audioUrl = await uploadAudio(file);
+      const updated = await updateRecordAudio(record.id, audioUrl);
       onUpdated(updated);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't upload that file");
     } finally {
       setBusy(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -116,6 +122,7 @@ export default function DetailSheet({
           disabled={busy}
           className="mt-2 text-xs font-mono"
         />
+        {error && <p className="font-mono text-xs text-rust mt-2">{error}</p>}
       </div>
 
       <div className="flex gap-2.5 mt-4.5">
