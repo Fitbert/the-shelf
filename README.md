@@ -56,11 +56,10 @@ Visit `http://localhost:3000`, sign in with a magic link sent to your own email,
 
 ## Deploy (Vercel)
 
-1. Push this repo to GitHub and import it into [Vercel](https://vercel.com/new).
-2. Set the project root to `shelf/` if deploying from this monorepo.
-3. Add the same environment variables from `.env.local` in the Vercel project settings (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DISCOGS_TOKEN`, `DISCOGS_USER_AGENT`).
-4. Add the deployed `https://your-app.vercel.app/auth/confirm` URL to Supabase's redirect allow-list (step 2.3 above).
-5. Deploy. Vercel serves everything over HTTPS by default, which the barcode camera (`getUserMedia`) requires.
+1. Import this repo into [Vercel](https://vercel.com/new) — it's a standalone repo, so the default project root is correct.
+2. Add the same environment variables from `.env.local` in the Vercel project settings (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DISCOGS_TOKEN`, `DISCOGS_USER_AGENT`).
+3. Add the deployed `https://your-app.vercel.app/auth/confirm` URL to Supabase's redirect allow-list (step 2.3 above).
+4. Deploy. Vercel serves everything over HTTPS by default, which the barcode camera (`getUserMedia`) requires.
 
 ## Notes
 
