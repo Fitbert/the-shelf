@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import TurntablePlayer from "./turntable/TurntablePlayer";
+import PlaybackProvider, { usePlayback } from "./turntable/PlaybackProvider";
+import MiniPlayer from "./MiniPlayer";
 import ShelfGrid from "./ShelfGrid";
 import DetailSheet from "./DetailSheet";
 import AddRecordSheet from "./AddRecordSheet";
@@ -11,14 +13,22 @@ import type { VinylRecord } from "@/lib/types";
 type Tab = "player" | "shelf";
 
 export default function AppShell({ initialRecords }: { initialRecords: VinylRecord[] }) {
+  return (
+    <PlaybackProvider>
+      <AppShellContent initialRecords={initialRecords} />
+    </PlaybackProvider>
+  );
+}
+
+function AppShellContent({ initialRecords }: { initialRecords: VinylRecord[] }) {
   const [records, setRecords] = useState(initialRecords);
   const [tab, setTab] = useState<Tab>("player");
-  const [nowPlaying, setNowPlaying] = useState<VinylRecord | null>(null);
   const [detailRecord, setDetailRecord] = useState<VinylRecord | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const { load, updateIfCurrent } = usePlayback();
 
   function play(record: VinylRecord) {
-    setNowPlaying(record);
+    load(record);
     setTab("player");
   }
 
@@ -28,12 +38,11 @@ export default function AppShell({ initialRecords }: { initialRecords: VinylReco
 
   function handleDeleted(id: string) {
     setRecords((prev) => prev.filter((r) => r.id !== id));
-    setNowPlaying((prev) => (prev?.id === id ? null : prev));
   }
 
   function handleUpdated(record: VinylRecord) {
     setRecords((prev) => prev.map((r) => (r.id === record.id ? record : r)));
-    setNowPlaying((prev) => (prev?.id === record.id ? record : prev));
+    updateIfCurrent(record);
     setDetailRecord((prev) => (prev?.id === record.id ? record : prev));
   }
 
@@ -69,11 +78,13 @@ export default function AppShell({ initialRecords }: { initialRecords: VinylReco
 
       <main className="px-5">
         {tab === "player" ? (
-          <TurntablePlayer record={nowPlaying} />
+          <TurntablePlayer />
         ) : (
           <ShelfGrid records={records} onSelect={setDetailRecord} />
         )}
       </main>
+
+      {tab !== "player" && <MiniPlayer onOpen={() => setTab("player")} />}
 
       <button
         onClick={() => setAddOpen(true)}

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Work_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -25,6 +25,15 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "The Shelf",
   description: "Your records, spinning — a personal vinyl collection and turntable.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "The Shelf",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1E6B78",
 };
 
 export default function RootLayout({
