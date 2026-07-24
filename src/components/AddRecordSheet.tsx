@@ -3,20 +3,36 @@
 import { useEffect, useRef, useState } from "react";
 import Sheet from "./Sheet";
 import BarcodeScanner from "./BarcodeScanner";
-import { addRecord } from "@/lib/actions";
+import { addRecord, addRecords } from "@/lib/actions";
 import { uploadPhoto } from "@/lib/storage-client";
-import type { DiscogsReleaseDetail, DiscogsSearchResult, VinylRecord } from "@/lib/types";
+import type {
+  DiscogsCollectionItem,
+  DiscogsReleaseDetail,
+  DiscogsSearchResult,
+  VinylRecord,
+} from "@/lib/types";
 
-type Mode = "search" | "scan" | "manual";
+type Mode = "search" | "scan" | "manual" | "import";
+
+const MODE_LABELS: Record<Mode, string> = {
+  search: "Discogs search",
+  scan: "Scan barcode",
+  manual: "Enter manually",
+  import: "Import collection",
+};
 
 export default function AddRecordSheet({
   open,
   onClose,
   onAdded,
+  onAddedMany,
+  existingRecords,
 }: {
   open: boolean;
   onClose: () => void;
   onAdded: (record: VinylRecord) => void;
+  onAddedMany: (records: VinylRecord[]) => void;
+  existingRecords: VinylRecord[];
 }) {
   const [mode, setMode] = useState<Mode>("search");
   const [wasOpen, setWasOpen] = useState(open);
@@ -33,10 +49,12 @@ export default function AddRecordSheet({
   return (
     <Sheet open={open} onClose={onClose}>
       <h2 className="font-display text-xl mb-1">Add a record</h2>
-      <p className="font-mono text-[0.7rem] text-ink/50 mb-4.5">search, scan, or enter it by hand</p>
+      <p className="font-mono text-[0.7rem] text-ink/50 mb-4.5">
+        search, scan, enter it by hand, or import your whole collection
+      </p>
 
-      <div className="flex gap-1.5 mb-4.5">
-        {(["search", "scan", "manual"] as Mode[]).map((m) => (
+      <div className="flex gap-1.5 mb-4.5 flex-wrap">
+        {(["search", "scan", "manual", "import"] as Mode[]).map((m) => (
           <button
             key={m}
             onClick={() => setMode(m)}
@@ -44,7 +62,7 @@ export default function AddRecordSheet({
               mode === m ? "bg-teal-deep text-cream-soft" : "bg-cream-soft text-ink/60"
             }`}
           >
-            {m === "search" ? "Discogs search" : m === "scan" ? "Scan barcode" : "Enter manually"}
+            {MODE_LABELS[m]}
           </button>
         ))}
       </div>
@@ -52,6 +70,9 @@ export default function AddRecordSheet({
       {mode === "search" && <DiscogsFlow key="search" mode="search" onAdded={onAdded} onClose={onClose} />}
       {mode === "scan" && <DiscogsFlow key="scan" mode="scan" onAdded={onAdded} onClose={onClose} />}
       {mode === "manual" && <ManualEntry onAdded={onAdded} onClose={onClose} />}
+      {mode === "import" && (
+        <ImportCollection onAddedMany={onAddedMany} onClose={onClose} existingRecords={existingRecords} />
+      )}
     </Sheet>
   );
 }
@@ -412,6 +433,191 @@ function ManualEntry({
           {saving ? "Adding…" : "Add to shelf"}
         </button>
       </div>
+    </div>
+  );
+}
+
+function ImportCollection({
+  onAddedMany,
+  onClose,
+  existingRecords,
+}: {
+  onAddedMany: (records: VinylRecord[]) => void;
+  onClose: () => void;
+  existingRecords: VinylRecord[];
+}) {
+  const [username, setUsername] = useState("");
+  const [items, setItems] = useState<DiscogsCollectionItem[]>([]);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [page, setPage] = useState(0);
+  const [pages, setPages] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const existingReleaseIds = new Set(
+    existingRecords.map((r) => r.discogs_release_id).filter((id): id is string => Boolean(id))
+  );
+
+  async function fetchPage(nextPage: number) {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/discogs/collection?username=${encodeURIComponent(username)}&page=${nextPage}`
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Couldn't load that collection");
+      const newItems = data.items as DiscogsCollectionItem[];
+      setItems((prev) => (nextPage === 1 ? newItems : [...prev, ...newItems]));
+      setPage(data.page);
+      setPages(data.pages);
+      setTotalItems(data.totalItems);
+      // Default-select items you don't already own.
+      setSelected((prev) => {
+        const next = new Set(prev);
+        for (const item of newItems) {
+          if (!existingReleaseIds.has(String(item.releaseId))) next.add(item.releaseId);
+        }
+        return next;
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't load that collection");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function toggle(releaseId: number) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(releaseId)) next.delete(releaseId);
+      else next.add(releaseId);
+      return next;
+    });
+  }
+
+  async function importSelected() {
+    const toImport = items.filter((item) => selected.has(item.releaseId));
+    if (toImport.length === 0) return;
+    setImporting(true);
+    setError(null);
+    try {
+      const records = await addRecords(
+        toImport.map((item) => ({
+          title: item.title,
+          artist: item.artist,
+          catalog_number: item.catalogNumber,
+          pressing_year: item.year ? Number(item.year) : null,
+          discogs_release_id: String(item.releaseId),
+          photo_url: item.thumb,
+        }))
+      );
+      onAddedMany(records);
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't import those records");
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  const selectedCount = selected.size;
+
+  return (
+    <div>
+      <p className="font-mono text-[0.7rem] text-ink/50 mb-3">
+        Pulls records from a public Discogs collection. Pricing and ratings aren&rsquo;t included in bulk
+        imports — add those later from a record&rsquo;s detail sheet if you want them.
+      </p>
+      <div className="flex gap-2 mb-3.5">
+        <input
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Discogs username"
+          className={`${inputClass} flex-1`}
+        />
+        <button
+          onClick={() => fetchPage(1)}
+          disabled={!username.trim() || loading}
+          className="shrink-0 rounded-lg bg-teal-deep text-cream-soft font-semibold text-sm px-4 disabled:opacity-40"
+        >
+          Fetch
+        </button>
+      </div>
+
+      {loading && items.length === 0 && <p className="font-mono text-xs text-ink/50">Loading collection…</p>}
+      {error && <p className="font-mono text-xs text-rust mb-2">{error}</p>}
+
+      {items.length > 0 && (
+        <>
+          <div className="font-mono text-[0.68rem] text-ink/50 mb-2">
+            {totalItems} in collection · {selectedCount} selected
+          </div>
+          <div className="space-y-1.5 max-h-[280px] overflow-y-auto pr-1">
+            {items.map((item) => {
+              const owned = existingReleaseIds.has(String(item.releaseId));
+              return (
+                <label
+                  key={item.releaseId}
+                  className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 ${
+                    owned ? "opacity-45" : "bg-cream-soft"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selected.has(item.releaseId)}
+                    onChange={() => toggle(item.releaseId)}
+                    className="accent-teal-deep shrink-0"
+                  />
+                  {item.thumb && (
+                    <div
+                      className="w-9 h-9 rounded bg-teal bg-cover bg-center shrink-0"
+                      style={{ backgroundImage: `url(${item.thumb})` }}
+                    />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="font-display text-sm truncate">{item.title}</div>
+                    <div className="font-mono text-[0.65rem] text-teal-deep truncate">
+                      {item.artist}
+                      {item.year ? ` · ${item.year}` : ""}
+                    </div>
+                  </div>
+                  {owned && <span className="font-mono text-[0.6rem] text-ink/50 shrink-0">on shelf</span>}
+                </label>
+              );
+            })}
+          </div>
+
+          {page < pages && (
+            <button
+              onClick={() => fetchPage(page + 1)}
+              disabled={loading}
+              className="w-full mt-2.5 rounded-full border-[1.5px] border-teal-deep text-teal-deep font-semibold text-xs py-2 disabled:opacity-40"
+            >
+              {loading ? "Loading…" : `Load more (${items.length}/${totalItems})`}
+            </button>
+          )}
+
+          <div className="flex gap-2.5 mt-4.5">
+            <button
+              onClick={onClose}
+              className="flex-1 rounded-full border-[1.5px] border-teal-deep text-teal-deep font-semibold text-sm py-2.5"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={importSelected}
+              disabled={importing || selectedCount === 0}
+              className="flex-1 rounded-full bg-orange text-ink font-semibold text-sm py-2.5 shadow-[0_4px_12px_rgba(242,163,75,0.4)] disabled:opacity-40"
+            >
+              {importing ? "Importing…" : `Import selected (${selectedCount})`}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

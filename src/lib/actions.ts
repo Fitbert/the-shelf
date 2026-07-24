@@ -54,6 +54,23 @@ export async function addRecord(input: NewRecordInput): Promise<VinylRecord> {
   return data as VinylRecord;
 }
 
+export async function addRecords(inputs: NewRecordInput[]): Promise<VinylRecord[]> {
+  if (inputs.length === 0) return [];
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const { data, error } = await supabase
+    .from("records")
+    .insert(inputs.map((input) => ({ ...input, user_id: user.id })))
+    .select();
+  if (error) throw new Error(error.message);
+  revalidatePath("/");
+  return data as VinylRecord[];
+}
+
 export async function deleteRecord(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("records").delete().eq("id", id);

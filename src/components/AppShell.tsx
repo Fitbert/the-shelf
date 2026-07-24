@@ -36,6 +36,10 @@ function AppShellContent({ initialRecords }: { initialRecords: VinylRecord[] }) 
     setRecords((prev) => [record, ...prev]);
   }
 
+  function handleAddedMany(newRecords: VinylRecord[]) {
+    setRecords((prev) => [...newRecords, ...prev]);
+  }
+
   function handleDeleted(id: string) {
     setRecords((prev) => prev.filter((r) => r.id !== id));
   }
@@ -102,7 +106,13 @@ function AppShellContent({ initialRecords }: { initialRecords: VinylRecord[] }) 
         onUpdated={handleUpdated}
       />
 
-      <AddRecordSheet open={addOpen} onClose={() => setAddOpen(false)} onAdded={handleAdded} />
+      <AddRecordSheet
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        onAdded={handleAdded}
+        onAddedMany={handleAddedMany}
+        existingRecords={records}
+      />
     </div>
   );
 }

@@ -42,3 +42,20 @@ export type DiscogsReleaseDetail = {
   rating: number | null;
   ratingCount: number | null;
 };
+
+export type DiscogsCollectionItem = {
+  releaseId: number;
+  title: string;
+  artist: string;
+  year: string | null;
+  thumb: string | null;
+  catalogNumber: string | null;
+  label: string | null;
+};
+
+export type DiscogsCollectionPage = {
+  page: number;
+  pages: number;
+  totalItems: number;
+  items: DiscogsCollectionItem[];
+};

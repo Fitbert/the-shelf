@@ -7,10 +7,12 @@ Built with Next.js (App Router) + React + Tailwind, Supabase (Postgres, Storage,
 ## Features
 
 - **Turntable player** — tilted product-shot deck with a layered plinth, grooved platter, strobe ring, power LED, and a draggable tonearm (pointer events, works on touch). A 33⅓/45 RPM switch changes the actual spin animation speed.
-- **Add records** three ways: Discogs search, barcode scan (camera), or manual entry with your own sleeve photo.
+- **Add records** four ways: Discogs search, barcode scan (camera), manual entry with your own sleeve photo, or bulk-importing a public Discogs collection.
 - **Pressing match** — Discogs search returns specific pressings (label, catalog number, country, year) so you can pick the exact copy you own, then pulls marketplace lowest price, have/want counts, and community rating for that release.
 - **The Shelf** — a searchable, sortable grid of your collection, synced to Supabase.
 - **Your own audio** — upload an audio file you already own (a rip/conversion) per record; dropping the needle plays it, with an optional vinyl-crackle layer generated with the Web Audio API.
+- **Persistent playback** — audio survives switching between the Turntable and Shelf tabs via a mini-player, and the Media Session API wires up lock-screen/bluetooth play, pause, and seek controls.
+- **Installable** — a generated manifest and icons let you add it to your phone's home screen as a standalone app.
 
 ## Stack
 
