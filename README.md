@@ -34,9 +34,9 @@ npm install
 3. In **Authentication → URL Configuration**, add your local (`http://localhost:3000/auth/confirm`) and deployed (`https://your-app.vercel.app/auth/confirm`) redirect URLs.
 4. Copy your Project URL and anon key from **Project Settings → API**.
 
-### 3. Get a Discogs token
+### 3. Get Discogs credentials
 
-Register an app at [discogs.com/settings/developers](https://www.discogs.com/settings/developers) and copy its personal access token. Discogs limits authenticated requests to 60/min — the app caches search/release lookups for 5 minutes server-side to stay well under that.
+Register an app at [discogs.com/settings/developers](https://www.discogs.com/settings/developers) ("create an application") and copy its **Consumer Key** and **Consumer Secret** — that's all this app needs (Discogs' simple key/secret auth, no OAuth handshake, since this only ever acts as you). Discogs limits authenticated requests to 60/min — the app caches search/release lookups for 5 minutes server-side to stay well under that.
 
 ### 4. Configure environment variables
 
@@ -57,12 +57,12 @@ Visit `http://localhost:3000`, sign in with a magic link sent to your own email,
 ## Deploy (Vercel)
 
 1. Import this repo into [Vercel](https://vercel.com/new) — it's a standalone repo, so the default project root is correct.
-2. Add the same environment variables from `.env.local` in the Vercel project settings (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DISCOGS_TOKEN`, `DISCOGS_USER_AGENT`).
+2. Add the same environment variables from `.env.local` in the Vercel project settings (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DISCOGS_CONSUMER_KEY`, `DISCOGS_CONSUMER_SECRET`, `DISCOGS_USER_AGENT`).
 3. Add the deployed `https://your-app.vercel.app/auth/confirm` URL to Supabase's redirect allow-list (step 2.3 above).
 4. Deploy. Vercel serves everything over HTTPS by default, which the barcode camera (`getUserMedia`) requires.
 
 ## Notes
 
-- The Discogs token is only ever read in server-side code (`src/lib/discogs.ts`, used by the `src/app/api/discogs/*` routes) — it's never sent to the browser.
+- The Discogs consumer key/secret are only ever read in server-side code (`src/lib/discogs.ts`, used by the `src/app/api/discogs/*` routes) — they're never sent to the browser.
 - Auth is magic-link (passwordless), single-user by design: Postgres row-level security and Storage policies key every row/object to `auth.uid()`, so the app is safe to leave on a public URL even though only one person is expected to use it.
 - Photo/audio uploads go to private Storage buckets; the app stores a long-lived signed URL rather than re-generating one on every read, which keeps the Shelf grid and turntable simple at the cost of needing a fresh upload if a URL ever needs to be revoked.

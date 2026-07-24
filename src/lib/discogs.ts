@@ -17,13 +17,18 @@ async function discogsFetch<T>(path: string): Promise<T> {
     return cached.value as T;
   }
 
-  const token = process.env.DISCOGS_TOKEN;
+  const consumerKey = process.env.DISCOGS_CONSUMER_KEY;
+  const consumerSecret = process.env.DISCOGS_CONSUMER_SECRET;
   const userAgent = process.env.DISCOGS_USER_AGENT || "TheShelf/1.0";
-  if (!token) {
-    throw new DiscogsError("Discogs isn't configured yet — set DISCOGS_TOKEN in your environment.", 500);
+  if (!consumerKey || !consumerSecret) {
+    throw new DiscogsError(
+      "Discogs isn't configured yet — set DISCOGS_CONSUMER_KEY and DISCOGS_CONSUMER_SECRET in your environment.",
+      500
+    );
   }
 
-  const url = `${BASE}${path}${path.includes("?") ? "&" : "?"}token=${token}`;
+  // Discogs' simple key/secret auth (no OAuth handshake) — meant for a single-owner app like this one.
+  const url = `${BASE}${path}${path.includes("?") ? "&" : "?"}key=${consumerKey}&secret=${consumerSecret}`;
   const res = await fetch(url, {
     headers: { "User-Agent": userAgent },
     // Discogs data changes slowly; a short server cache also protects the 60 req/min budget.
