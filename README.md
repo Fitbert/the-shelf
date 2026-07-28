@@ -8,7 +8,7 @@ Built with Next.js (App Router) + React + Tailwind, Supabase (Postgres, Storage,
 
 **Phase 1: complete and live.** Deployed to Vercel, verified end-to-end on a real device: sign-in, adding records all four ways, audio upload/playback, persistent mini-player + Media Session lock-screen controls, and home-screen install. No known bugs.
 
-**Phase 2: not started.** See [Roadmap](#roadmap-phase-2) below.
+**Phase 2: per-track playback shipped.** Records now hold a track list instead of one audio file per album — see [Features](#features) below. Run [`0002_tracks.sql`](./supabase/migrations/0002_tracks.sql) against your Supabase project to pick it up (step 2 in Setup).
 
 ## Features
 
@@ -16,8 +16,8 @@ Built with Next.js (App Router) + React + Tailwind, Supabase (Postgres, Storage,
 - **Add records** four ways: Discogs search, barcode scan (camera), manual entry with your own sleeve photo, or bulk-importing a public Discogs collection.
 - **Pressing match** — Discogs search returns specific pressings (label, catalog number, country, year) so you can pick the exact copy you own, then pulls marketplace lowest price, have/want counts, and community rating for that release.
 - **The Shelf** — a searchable, sortable grid of your collection, synced to Supabase.
-- **Your own audio** — upload an audio file you already own (a rip/conversion) per record; dropping the needle plays it, with an optional vinyl-crackle layer generated with the Web Audio API.
-- **Persistent playback** — audio survives switching between the Turntable and Shelf tabs via a mini-player, and the Media Session API wires up lock-screen/bluetooth play, pause, and seek controls.
+- **Per-track playback** — records hold a real track list (`tracks` table) rather than one audio file per album. Adding via Discogs search/scan seeds the tracklist automatically; manual entries get tracks added from the detail sheet. Upload audio per track there too, and the turntable/mini-player skip between tracks (including from the lock screen via Media Session's next/previous). A record with no tracks yet falls back to playing its own legacy `audio_url`, so anything added before Phase 2 keeps working unchanged.
+- **Persistent playback** — audio survives switching between the Turntable and Shelf tabs via a mini-player, and the Media Session API wires up lock-screen/bluetooth play, pause, seek, and track-skip controls.
 - **Installable** — a generated manifest and icons let you add it to your phone's home screen as a standalone app.
 
 ## Stack
@@ -38,7 +38,7 @@ npm install
 ### 2. Create a Supabase project
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. In the SQL Editor, run the migration in [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_init.sql). It creates the `records` table with row-level security scoped to the signed-in user, and two private Storage buckets (`record-photos`, `record-audio`) with matching per-user policies.
+2. In the SQL Editor, run the migrations in [`supabase/migrations/`](./supabase/migrations/) in order: [`0001_init.sql`](./supabase/migrations/0001_init.sql) creates the `records` table with row-level security scoped to the signed-in user, and two private Storage buckets (`record-photos`, `record-audio`) with matching per-user policies; [`0002_tracks.sql`](./supabase/migrations/0002_tracks.sql) adds the `tracks` table (one record has many tracks), with RLS enforced through the parent record's ownership.
 3. In **Authentication → URL Configuration**, add your local (`http://localhost:3000/auth/confirm`) and deployed (`https://your-app.vercel.app/auth/confirm`) redirect URLs.
 4. Copy your Project URL and anon key from **Project Settings → API**.
 
@@ -69,15 +69,9 @@ Visit `http://localhost:3000`, sign in with a magic link sent to your own email,
 3. Add the deployed `https://your-app.vercel.app/auth/confirm` URL to Supabase's redirect allow-list (step 2.3 above).
 4. Deploy. Vercel serves everything over HTTPS by default, which the barcode camera (`getUserMedia`) requires.
 
-## Roadmap (Phase 2)
+## Roadmap (Phase 3)
 
-**Per-track playback.** Right now one audio file plays per record (per album, not per song) — dropping the needle just plays whatever single file is attached to that record. Phase 2 makes it a real track player:
-
-- A `tracks` table (`record_id`, `position`, `title`, `duration`, `audio_url`) — one record has many tracks.
-- Pull the tracklist from Discogs when adding via search/scan/import — it's already in the `/releases/{id}` response (`tracklist` field) but unused today; see `getReleaseDetail` in `src/lib/discogs.ts`.
-- Manual-entry records need their own way to add tracks too, not just Discogs-sourced ones.
-- Detail sheet: show/edit the track list, attach audio per track (reuse the existing client-side Storage upload from `src/lib/storage-client.ts`).
-- Turntable/player: skip forward/back between tracks instead of one file per album; extend `PlaybackProvider` (`src/components/turntable/PlaybackProvider.tsx`) which already owns the persistent `<audio>` element and Media Session wiring — track-skip should hook into the existing `nexttrack`/`previoustrack` Media Session actions, which are currently unset.
+Nothing planned yet. One known gap left over from Phase 2: bulk-importing a public Discogs collection doesn't pull tracklists (same reason it skips pricing/ratings — that's a per-release API call per item, and a big collection would blow the 60 req/min budget). Search and barcode-scan adds do get tracklists automatically; a bulk-imported record can still have tracks added by hand from its detail sheet.
 
 ## Notes
 

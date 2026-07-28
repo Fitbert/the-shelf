@@ -2,12 +2,10 @@
 
 import Turntable from "./Turntable";
 import { usePlayback } from "./PlaybackProvider";
+import { formatDuration } from "@/lib/format";
 
 function formatTime(seconds: number) {
-  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
+  return formatDuration(seconds) || "0:00";
 }
 
 export default function TurntablePlayer() {
@@ -19,8 +17,15 @@ export default function TurntablePlayer() {
     currentTime,
     duration,
     hasAudio,
+    currentTrack,
+    trackIndex,
+    trackCount,
+    hasNextTrack,
+    hasPreviousTrack,
     drop,
     lift,
+    nextTrack,
+    previousTrack,
     setRpm45,
     setCrackleOn,
     seek,
@@ -33,6 +38,12 @@ export default function TurntablePlayer() {
           <>
             <div className="font-display font-semibold text-xl">{record.title}</div>
             <div className="font-mono text-sm text-teal-deep mt-0.5">{record.artist}</div>
+            {trackCount > 1 && (
+              <div className="font-mono text-[0.7rem] text-ink/45 mt-1">
+                Track {trackIndex + 1} of {trackCount}
+                {currentTrack?.title ? ` · ${currentTrack.title}` : ""}
+              </div>
+            )}
           </>
         ) : (
           <div className="font-mono text-sm text-ink/45">
@@ -91,6 +102,16 @@ export default function TurntablePlayer() {
           </button>
         </div>
 
+        {trackCount > 1 && (
+          <button
+            className="rounded-full bg-transparent text-teal-deep border-[1.5px] border-teal-deep font-semibold text-[0.85rem] px-3.5 py-[11px] disabled:opacity-35 transition-transform active:scale-[0.96]"
+            disabled={!hasPreviousTrack}
+            onClick={previousTrack}
+            aria-label="Previous track"
+          >
+            ⏮
+          </button>
+        )}
         <button
           className="rounded-full bg-orange text-ink font-semibold text-[0.85rem] px-5 py-[11px] shadow-[0_4px_12px_rgba(242,163,75,0.4)] disabled:opacity-35 disabled:shadow-none transition-transform active:scale-[0.96]"
           disabled={!record || dropped}
@@ -105,6 +126,16 @@ export default function TurntablePlayer() {
         >
           Lift
         </button>
+        {trackCount > 1 && (
+          <button
+            className="rounded-full bg-transparent text-teal-deep border-[1.5px] border-teal-deep font-semibold text-[0.85rem] px-3.5 py-[11px] disabled:opacity-35 transition-transform active:scale-[0.96]"
+            disabled={!hasNextTrack}
+            onClick={nextTrack}
+            aria-label="Next track"
+          >
+            ⏭
+          </button>
+        )}
       </div>
 
       <label className="flex items-center gap-2 mt-4 font-mono text-xs text-ink/60">

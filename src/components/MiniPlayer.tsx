@@ -3,7 +3,8 @@
 import { usePlayback } from "./turntable/PlaybackProvider";
 
 export default function MiniPlayer({ onOpen }: { onOpen: () => void }) {
-  const { record, dropped, hasAudio, currentTime, duration, drop, lift } = usePlayback();
+  const { record, dropped, hasAudio, currentTime, duration, currentTrack, trackCount, drop, lift } =
+    usePlayback();
 
   if (!record) return null;
 
@@ -26,7 +27,10 @@ export default function MiniPlayer({ onOpen }: { onOpen: () => void }) {
         />
         <div className="min-w-0 flex-1">
           <div className="font-display font-semibold text-sm truncate">{record.title}</div>
-          <div className="font-mono text-[0.68rem] text-teal-deep truncate">{record.artist}</div>
+          <div className="font-mono text-[0.68rem] text-teal-deep truncate">
+            {record.artist}
+            {trackCount > 1 && currentTrack?.title ? ` · ${currentTrack.title}` : ""}
+          </div>
         </div>
         <span
           role="button"

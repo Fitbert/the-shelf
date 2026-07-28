@@ -25,7 +25,7 @@ function AppShellContent({ initialRecords }: { initialRecords: VinylRecord[] }) 
   const [tab, setTab] = useState<Tab>("player");
   const [detailRecord, setDetailRecord] = useState<VinylRecord | null>(null);
   const [addOpen, setAddOpen] = useState(false);
-  const { load, updateIfCurrent } = usePlayback();
+  const { load } = usePlayback();
 
   function play(record: VinylRecord) {
     load(record);
@@ -42,12 +42,6 @@ function AppShellContent({ initialRecords }: { initialRecords: VinylRecord[] }) 
 
   function handleDeleted(id: string) {
     setRecords((prev) => prev.filter((r) => r.id !== id));
-  }
-
-  function handleUpdated(record: VinylRecord) {
-    setRecords((prev) => prev.map((r) => (r.id === record.id ? record : r)));
-    updateIfCurrent(record);
-    setDetailRecord((prev) => (prev?.id === record.id ? record : prev));
   }
 
   return (
@@ -103,7 +97,6 @@ function AppShellContent({ initialRecords }: { initialRecords: VinylRecord[] }) 
         onClose={() => setDetailRecord(null)}
         onPlay={play}
         onDeleted={handleDeleted}
-        onUpdated={handleUpdated}
       />
 
       <AddRecordSheet

@@ -41,6 +41,23 @@ export type DiscogsReleaseDetail = {
   wantCount: number | null;
   rating: number | null;
   ratingCount: number | null;
+  tracklist: DiscogsTrackInfo[];
+};
+
+export type DiscogsTrackInfo = {
+  position: string;
+  title: string;
+  durationSeconds: number | null;
+};
+
+export type Track = {
+  id: string;
+  record_id: string;
+  position: number;
+  title: string;
+  duration_seconds: number | null;
+  audio_url: string | null;
+  created_at: string;
 };
 
 export type DiscogsCollectionItem = {

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { VinylRecord } from "@/lib/types";
+import type { Track, VinylRecord } from "@/lib/types";
 
 export async function signOut() {
   const supabase = await createClient();
@@ -78,18 +78,68 @@ export async function deleteRecord(id: string) {
   revalidatePath("/");
 }
 
-// File bytes never pass through here — they're uploaded client-side straight
-// to Supabase Storage (src/lib/storage-client.ts). This just persists the
-// resulting URL, a tiny payload well under any serverless body-size limit.
-export async function updateRecordAudio(id: string, audioUrl: string): Promise<VinylRecord> {
+export async function listTracks(recordId: string): Promise<Track[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("records")
-    .update({ audio_url: audioUrl })
-    .eq("id", id)
+    .from("tracks")
+    .select("*")
+    .eq("record_id", recordId)
+    .order("position", { ascending: true });
+  if (error) throw new Error(error.message);
+  return data as Track[];
+}
+
+export type NewTrackInput = {
+  title: string;
+  duration_seconds?: number | null;
+  audio_url?: string | null;
+};
+
+// Appends a single track after whatever's already on the record — used for
+// manual entry, where there's no Discogs tracklist to seed from.
+export async function addTrack(recordId: string, input: NewTrackInput): Promise<Track> {
+  const supabase = await createClient();
+  const { count, error: countError } = await supabase
+    .from("tracks")
+    .select("id", { count: "exact", head: true })
+    .eq("record_id", recordId);
+  if (countError) throw new Error(countError.message);
+
+  const { data, error } = await supabase
+    .from("tracks")
+    .insert({ record_id: recordId, position: (count ?? 0) + 1, ...input })
     .select()
     .single();
   if (error) throw new Error(error.message);
-  revalidatePath("/");
-  return data as VinylRecord;
+  return data as Track;
+}
+
+// Bulk-seeds a record's tracklist, e.g. straight from a Discogs release.
+export async function addTracks(recordId: string, inputs: NewTrackInput[]): Promise<Track[]> {
+  if (inputs.length === 0) return [];
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tracks")
+    .insert(inputs.map((input, i) => ({ record_id: recordId, position: i + 1, ...input })))
+    .select();
+  if (error) throw new Error(error.message);
+  return data as Track[];
+}
+
+export async function updateTrackAudio(trackId: string, audioUrl: string): Promise<Track> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tracks")
+    .update({ audio_url: audioUrl })
+    .eq("id", trackId)
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data as Track;
+}
+
+export async function deleteTrack(trackId: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("tracks").delete().eq("id", trackId);
+  if (error) throw new Error(error.message);
 }

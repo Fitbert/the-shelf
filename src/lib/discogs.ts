@@ -1,4 +1,5 @@
 import type { DiscogsCollectionPage, DiscogsReleaseDetail, DiscogsSearchResult } from "@/lib/types";
+import { parseDurationToSeconds } from "@/lib/format";
 
 const BASE = "https://api.discogs.com";
 
@@ -111,6 +112,7 @@ type DiscogsReleaseResponse = {
   images?: Array<{ uri: string }>;
   labels?: Array<{ name: string; catno: string }>;
   community?: { have?: number; want?: number; rating?: { average?: number; count?: number } };
+  tracklist?: Array<{ position?: string; title: string; duration?: string; type_?: string }>;
 };
 
 type DiscogsMarketplaceStats = {
@@ -189,5 +191,14 @@ export async function getReleaseDetail(id: string): Promise<DiscogsReleaseDetail
     wantCount: release.community?.want ?? null,
     rating: release.community?.rating?.average ?? null,
     ratingCount: release.community?.rating?.count ?? null,
+    // Sub-track "headings" (e.g. LP sides with no audio of their own) show up
+    // with type_ "heading" in Discogs' response — those aren't real tracks.
+    tracklist: (release.tracklist ?? [])
+      .filter((t) => (t.type_ ?? "track") === "track" && t.title)
+      .map((t) => ({
+        position: t.position ?? "",
+        title: t.title,
+        durationSeconds: parseDurationToSeconds(t.duration),
+      })),
   };
 }

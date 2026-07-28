@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Sheet from "./Sheet";
 import BarcodeScanner from "./BarcodeScanner";
-import { addRecord, addRecords } from "@/lib/actions";
+import { addRecord, addRecords, addTracks } from "@/lib/actions";
 import { uploadPhoto } from "@/lib/storage-client";
 import type {
   DiscogsCollectionItem,
@@ -168,6 +168,12 @@ function DiscogsFlow({
         community_rating_count: selected.ratingCount,
         photo_url: selected.thumb,
       });
+      if (selected.tracklist.length > 0) {
+        await addTracks(
+          record.id,
+          selected.tracklist.map((t) => ({ title: t.title, duration_seconds: t.durationSeconds }))
+        );
+      }
       onAdded(record);
       onClose();
     } catch (e) {
@@ -220,6 +226,11 @@ function DiscogsFlow({
           {selected.lowestPrice != null && (
             <span className="font-mono text-[0.68rem] bg-rust text-cream-soft px-2.5 py-[5px] rounded-full">
               ${selected.lowestPrice.toFixed(2)} lowest
+            </span>
+          )}
+          {selected.tracklist.length > 0 && (
+            <span className="font-mono text-[0.68rem] bg-cream-soft border border-teal-deep/20 px-2.5 py-[5px] rounded-full">
+              {selected.tracklist.length} tracks
             </span>
           )}
         </div>
