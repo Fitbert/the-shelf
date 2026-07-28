@@ -4,6 +4,12 @@ A personal vinyl record collection tracker with a realistic on-screen turntable.
 
 Built with Next.js (App Router) + React + Tailwind, Supabase (Postgres, Storage, Auth), and the Discogs API.
 
+## Status
+
+**Phase 1: complete and live.** Deployed to Vercel, verified end-to-end on a real device: sign-in, adding records all four ways, audio upload/playback, persistent mini-player + Media Session lock-screen controls, and home-screen install. No known bugs.
+
+**Phase 2: not started.** See [Roadmap](#roadmap-phase-2) below.
+
 ## Features
 
 - **Turntable player** — tilted product-shot deck with a layered plinth, grooved platter, strobe ring, power LED, and a draggable tonearm (pointer events, works on touch). A 33⅓/45 RPM switch changes the actual spin animation speed.
@@ -62,6 +68,16 @@ Visit `http://localhost:3000`, sign in with a magic link sent to your own email,
 2. Add the same environment variables from `.env.local` in the Vercel project settings (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DISCOGS_CONSUMER_KEY`, `DISCOGS_CONSUMER_SECRET`, `DISCOGS_USER_AGENT`).
 3. Add the deployed `https://your-app.vercel.app/auth/confirm` URL to Supabase's redirect allow-list (step 2.3 above).
 4. Deploy. Vercel serves everything over HTTPS by default, which the barcode camera (`getUserMedia`) requires.
+
+## Roadmap (Phase 2)
+
+**Per-track playback.** Right now one audio file plays per record (per album, not per song) — dropping the needle just plays whatever single file is attached to that record. Phase 2 makes it a real track player:
+
+- A `tracks` table (`record_id`, `position`, `title`, `duration`, `audio_url`) — one record has many tracks.
+- Pull the tracklist from Discogs when adding via search/scan/import — it's already in the `/releases/{id}` response (`tracklist` field) but unused today; see `getReleaseDetail` in `src/lib/discogs.ts`.
+- Manual-entry records need their own way to add tracks too, not just Discogs-sourced ones.
+- Detail sheet: show/edit the track list, attach audio per track (reuse the existing client-side Storage upload from `src/lib/storage-client.ts`).
+- Turntable/player: skip forward/back between tracks instead of one file per album; extend `PlaybackProvider` (`src/components/turntable/PlaybackProvider.tsx`) which already owns the persistent `<audio>` element and Media Session wiring — track-skip should hook into the existing `nexttrack`/`previoustrack` Media Session actions, which are currently unset.
 
 ## Notes
 
