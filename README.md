@@ -71,7 +71,8 @@ Visit `http://localhost:3000`, sign in with a magic link sent to your own email,
 
 ## Roadmap (Phase 3)
 
-Nothing planned yet. One known gap left over from Phase 2: bulk-importing a public Discogs collection doesn't pull tracklists (same reason it skips pricing/ratings — that's a per-release API call per item, and a big collection would blow the 60 req/min budget). Search and barcode-scan adds do get tracklists automatically; a bulk-imported record can still have tracks added by hand from its detail sheet.
+- **Bulk-import tracklists.** Bulk-importing a public Discogs collection doesn't pull tracklists (same reason it skips pricing/ratings — that's a per-release API call per item, and a big collection would blow the 60 req/min budget). Search and barcode-scan adds do get tracklists automatically; a bulk-imported record can still have tracks added by hand from its detail sheet.
+- **Now-playing visual polish.** The current track name on the Turntable (`Track X of Y · title`, in `TurntablePlayer.tsx`) renders thin/low-contrast and is hard to read at a glance. Wants a real visual pass — heavier weight or better contrast at minimum, and the user's asked for something more motion/visually-interactive in general for the now-playing display (not scoped further yet — worth a proper design pass rather than a quick tweak).
 
 ## Notes
 
